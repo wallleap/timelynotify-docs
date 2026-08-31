@@ -4,7 +4,7 @@
 
 ## 部署文件
 
-本项目的部署产物位于 `deploy/` 目录，均已改为独立命名、不依赖原项目：
+本项目的部署产物位于 `deploy/` 目录
 
 | 文件 | 说明 |
 | --- | --- |
@@ -15,44 +15,105 @@
 | `deploy/entrypoint.sh` | 容器入口，设置时区 |
 | `deploy/helm-chart/` | Kubernetes Helm Chart |
 
-## Docker
+## 部署方式
+
+### Docker
+
+国内直接拉取 Docker Hub 镜像较慢，建议先配置镜像加速。在 Docker 的 `daemon.json` 中加入以下内容：
+
+```json
+{
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io",
+    "https://docker.jiaxin.site",
+    "https://docker.1ms.run"
+  ]
+}
+```
+
+**Linux** 运行命令
+
+```bash
+# 写入（或新建）配置文件
+sudo mkdir -p /etc/docker
+
+echo '{
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io",
+    "https://docker.jiaxin.site",
+    "https://docker.1ms.run"
+  ]
+}' | sudo tee /etc/docker/daemon.json
+
+# 重启 Docker 生效
+sudo systemctl daemon-reload
+
+sudo systemctl restart docker
+
+# 验证是否生效
+docker info | grep -A 3 "Registry Mirrors"
+```
+
+**Windows** 推荐下载 Docker Desktop 商店版本
+
+![](https://cdn.wallleap.cn/img/pic/illustration/20260831224858310.png?imageSlim)
+
+安装后打开 Docker Desktop → Settings → Docker Engine，在右侧 JSON 编辑框中合并加入上面的 `registry-mirrors` 配置，点击 **Apply & Restart** 生效。
+
+**macOS** 推荐下载 OrbStack
+
+安装后打开 OrbStack → Settings → Docker - Engine，在配置中加入上面的 `registry-mirrors` 字段（也可直接编辑 `~/.orbstack/config/docker.json`），保存后重启 OrbStack 生效。若使用 Docker Desktop for Mac，配置方式与 Windows 相同。
+
+---
+
+Docker 部署**方式一**：修改 `your-gotify-client-token` 为你想设置的客户端 token 后运行命令
 
 ```sh
 docker run -dt --name timelynotify-server --restart unless-stopped \
   -p 18080:8080 \
-  -v `pwd`/bark-data:/data \
+  -v timelynotify-data:/data \
   -e BARK_SERVER_GOTIFY_CLIENT_TOKEN="your-gotify-client-token" \
-  -e BARK_SERVER_BASIC_AUTH_USER="admin" \
-  -e BARK_SERVER_BASIC_AUTH_PASSWORD="secret" \
   wallleap/timelynotify-server
 ```
 
-> 容器以非 root 用户 `app`（uid 1000）运行，首次挂载 host 数据目录时需把属主改为该 uid，否则报 `permission denied`：
->
-> ```sh
-> sudo chown -R 1000:1000 `pwd`/bark-data
-> ```
->
-> 用 Docker 命名卷（`docker volume create` + `-v <volume>:/data`）可免去手动 chown。
+> 数据使用 Docker 命名卷 `timelynotify-data`（首次运行自动创建），权限由 Docker 管理，无需手动 chown。如需查看数据位置可执行 `docker volume inspect timelynotify-data`。
 
-使用 docker-compose：
+Docker 部署**方式二**：使用 docker-compose 部署
+
+运行命令
 
 ```sh
 # 复制本项目 deploy/docker-compose.yaml 到任意目录
 mkdir timelynotify-server && cd timelynotify-server
-curl -sL https://raw.githubusercontent.com/wallleap/timelynotify-server/master/deploy/docker-compose.yaml -o docker-compose.yaml
+curl -sL https://gh-proxy.com/https://raw.githubusercontent.com/wallleap/timelynotify-server/master/deploy/docker-compose.yaml -o docker-compose.yaml
 # 提前赋权避免容器权限报错
 sudo chown -R 1000:1000 ./data
 # 后台启动
 docker compose up -d
 ```
 
-`deploy/docker-compose.yaml` 已内置注释的环境变量入口，按需取消注释即可。
+`deploy/docker-compose.yaml` 已内置注释的环境变量入口，按需取消注释即可，如果没有指定 `client_token`，会自动生成
 
-> **本地开发**：`bin/up` / `bin/down` 默认使用 `deploy/docker-compose.local.yaml`（本地构建镜像，不拉远程），`bin/up` 会自动 `--build`。
-> 如需用远程镜像可运行 `COMPOSE_FILE=deploy/docker-compose.yaml bin/up`。
+可以运行 `docker logs timelynotify-server` 查看容器日志
 
-## systemd
+找到日志中的 client token 行，例如下方 `P29PO93tezRgMgKIiRuDoKlOwWLVJ43zT2AkrzbyP-U` 为 `client_token`（客户端 token）
+
+```bash
+2026-08-31 23:06:52    INFO    Gotify-compatible stream ready. Generated client token (set bridge gotify_token to this): P29PO93tezRgMgKIiRuDoKlOwWLVJ43zT2AkrzbyP-U
+```
+
+注意：自动生成的 `client_token` 仅在第一次运行时打印，后续运行时不会打印，如果错过了首启日志且容器已重启过，就需要清空数据重新初始化
+
+```sh
+# 删除容器和数据卷后，重新执行上面的 docker run 命令（带上 BARK_SERVER_GOTIFY_CLIENT_TOKEN）
+docker rm -f timelynotify-server && docker volume rm timelynotify-data
+```
+
+Docker 部署**方式三**：可以 clone 项目到本地，然后运行：`bin/up` / `bin/down` 默认使用 `deploy/docker-compose.local.yaml`（本地构建镜像，不拉远程），`bin/up` 会自动 `--build`。
+
+如需用远程镜像可运行 `COMPOSE_FILE=deploy/docker-compose.yaml bin/up`。
+
+### systemd
 
 这个没有测试，如果有问题请反馈。
 
@@ -75,21 +136,27 @@ systemctl daemon-reload
 systemctl enable --now timelynotify-server
 ```
 
-## 直接运行
+### 直接运行
 
-1. 自行编译或从 [releases](https://github.com/wallleap/timelynotify-server/releases) 下载预编译二进制
+1. 自行编译或从 [releases](https://github.com/wallleap/timelynotify-server/releases) 下载预编译二进制（等 1.0.0 发布后将加上）
 2. 添加执行权限：`chmod +x timelynotify-server`
 3. 启动（含修改后的参数）：
 
     ```sh
-    ./timelynotify-server --addr 0.0.0.0:8080 --data ./bark-data \
+    ./timelynotify-server --addr 0.0.0.0:18080 --data ./bark-data \
     --gotify-client-token your-gotify-client-token \
     --user admin --password secret
     ```
 
-4. 测试：`curl localhost:8080/ping`
+4. 测试：`curl localhost:18080/ping`
 
 **注意：服务端默认使用 `/data` 目录存储数据，请确保有写权限，否则用 `--data` 指定目录。**
+
+## client_token
+
+`client_token` 在部署时通过环境变量 `BARK_SERVER_GOTIFY_CLIENT_TOKEN` 或 `--gotify-client-token` 指定
+
+如果没有指定，会自动生成，且仅在第一次运行时打印，后续运行时不会打印，可以看上方查找日志中的 `client_token`（客户端 token）
 
 ## 主要参数（相对上游新增/常用）
 
@@ -97,7 +164,7 @@ systemctl enable --now timelynotify-server
 | --- | --- |
 | `--addr` / `BARK_SERVER_ADDRESS` | 监听地址，默认 `0.0.0.0:8080` |
 | `--data` / `BARK_SERVER_DATA_DIR` | 数据目录（bbolt + gotify.db），默认 `/data` |
-| `--gotify-client-token` / `BARK_SERVER_GOTIFY_CLIENT_TOKEN` | Gotify 兼容监控客户端 token，自动生成并持久化。**hotify-bridge 需用它当作 `gotify_token`**（依赖见下文） |
+| `--gotify-client-token` / `BARK_SERVER_GOTIFY_CLIENT_TOKEN` | Gotify 兼容监控客户端 token，自动生成并持久化，查看/删除消息时认证用 |
 | `--gotify-max-messages` / `BARK_SERVER_GOTIFY_MAX_MESSAGES` | Gotify 监控消息保留上限，默认 `0`（使用内置默认 `1000`） |
 | `--user` / `--password` / `BARK_SERVER_BASIC_AUTH_{USER,PASSWORD}` | 可选 Basic Auth，同时设置后开启，所有非白名单路径请求头要带 `Authorization: Basic base64(user:password)` |
 | `--dsn` / `BARK_SERVER_DSN` | 改用 MySQL 替代 Bbolt |
