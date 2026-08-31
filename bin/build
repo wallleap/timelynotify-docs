@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# 构建文档站点并 scp 上传到服务器
+#
+# 服务器配置（按优先级：环境变量 > 下面默认值）
+# 也可以在项目根目录创建 .deploy.env 文件（已被 .gitignore 忽略）：
+#   SERVER=user@example.com
+#   SERVER_PORT=22
+#   SERVER_PATH=/var/www/timelynotify-doc
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+# 读取项目根目录的 .deploy.env（若存在）
+if [ -f .deploy.env ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source .deploy.env
+  set +a
+fi
+
+# ── 服务器配置（改成你的服务器信息）──────────────────
+SERVER="${SERVER:-user@example.com}"       # 用户@主机
+SERVER_PORT="${SERVER_PORT:-22}"           # SSH 端口
+SERVER_PATH="${SERVER_PATH:-/var/www/timelynotify-doc}"  # 远端目标目录
+# ────────────────────────────────────────────────────
+
+DIST="docs/.vitepress/dist"
+
+echo "==> 构建 VitePress 站点..."
+npm run docs:build
+
+if [ ! -d "$DIST" ]; then
+  echo "错误：构建产物 $DIST 不存在" >&2
+  exit 1
+fi
+
+echo "==> 上传到 ${SERVER}:${SERVER_PATH}（端口 ${SERVER_PORT}）..."
+# 单次 SSH 连接完成目录创建 + 传输（密码认证时只需输入一次密码）
+tar -C "$DIST" -cf - . | ssh -p "$SERVER_PORT" "$SERVER" "mkdir -p '${SERVER_PATH}' && tar -C '${SERVER_PATH}' -xf -"
+
+echo "==> 完成：https 站点文件已部署到 ${SERVER}:${SERVER_PATH}"

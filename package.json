@@ -1,0 +1,18 @@
+{
+  "name": "timelynotify-doc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TimelyNotify documentation site built with VitePress",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "build": "bash bin/build"
+  },
+  "devDependencies": {
+    "medium-zoom": "^1.1.0",
+    "vitepress": "^1.6.4",
+    "vue": "^3.5.42"
+  }
+}

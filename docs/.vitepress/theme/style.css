@@ -1,0 +1,67 @@
+/* 隐藏顶部导航栏：标题、搜索、菜单 */
+.VPNav {
+  display: none !important;
+}
+
+/* 同步移除导航栏占用的顶部空间 */
+:root {
+  --vp-nav-height: 0px !important;
+}
+
+/* 桌面端左侧边栏从页面顶部开始 */
+.VPSidebar {
+  top: 0 !important;
+  padding-top: 24px !important;
+}
+
+/* 隐藏"本页目录"所在的本地导航条（含移动端 Menu 按钮） */
+.VPLocalNav {
+  display: none !important;
+}
+
+/* 收紧页面顶部与底部留白，避免短内容撑开整屏 */
+.VPContent {
+  padding-top: 0 !important;
+  flex-grow: 0 !important;
+}
+
+.Layout {
+  min-height: auto !important;
+}
+
+.VPDoc {
+  padding-top: 16px !important;
+  padding-bottom: 12px !important;
+}
+
+/* 收紧正文容器底部的大留白（桌面端默认 128px） */
+.VPDoc .content {
+  padding-bottom: 12px !important;
+}
+
+/* 主题色 #ff5a16 */
+:root {
+  --vp-c-brand-1: #ff5a16;
+  --vp-c-brand-2: #e64c10;
+  --vp-c-brand-3: #ff7a42;
+  --vp-c-brand-soft: rgba(255, 90, 22, 0.14);
+}
+
+/* 隐藏底部的上一篇 / 下一篇翻页 */
+.VPDocFooter .prev-next {
+  display: none !important;
+}
+
+/* 图片放大：悬停提示可点击 */
+.VPDoc img {
+  cursor: zoom-in;
+}
+
+/* 图片放大后的遮罩与放大图层级 */
+.medium-zoom-overlay {
+  z-index: 100;
+}
+
+.medium-zoom-image--opened {
+  z-index: 101;
+}

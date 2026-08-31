@@ -1,0 +1,7 @@
+node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/.vitepress/config.mjs.timestamp-*.mjs
+.workbuddy/
+.DS_Store
+.deploy.env
