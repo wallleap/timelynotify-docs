@@ -52,6 +52,15 @@
   display: none !important;
 }
 
+/* 左侧边栏：当前文档标题下方展开本文档目录，按层级缩进 */
+.VPSidebarItem.level-1 > .items {
+  padding-left: 16px !important;
+}
+
+.VPSidebarItem.level-2 > .items {
+  padding-left: 16px !important;
+}
+
 /* 图片放大：悬停提示可点击 */
 .VPDoc img {
   cursor: zoom-in;

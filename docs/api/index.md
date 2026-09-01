@@ -8,28 +8,28 @@ TimelyNotify Server HTTP API 参考。兼容上游 Bark V1（URL 路径参数推
 - [认证](#认证)
 - [限流](#限流)
 - [推送](#推送)
-  - [POST /push（V2 单设备推送）](#post-pushv2-单设备推送)
-  - [POST /push（V2 批量推送）](#post-pushv2-批量推送)
-  - [V1 兼容推送（路径参数）](#v1-兼容推送路径参数)
+  - [POST /push（V2 单设备推送）](#post-push-v2-单设备推送)
+  - [POST /push（V2 批量推送）](#post-push-v2-批量推送)
+  - [V1 兼容推送（路径参数）](#v1-兼容推送-路径参数)
   - [Push 字段参考](#push-字段参考)
   - [多平台扇出](#多平台扇出)
   - [参数优先级](#参数优先级)
   - [HarmonyOS 推送](#harmonyos-推送)
 - [设备注册](#设备注册)
   - [POST /register](#post-register)
-  - [GET /register（兼容旧客户端）](#get-register兼容旧客户端)
-  - [GET /register/:device\_key（校验存在）](#get-registerdevice_key校验存在)
-- [Gotify 兼容监控（设备级）](#gotify-兼容监控设备级)
-  - [GET /:device\_key/version](#get-device_keyversion)
-  - [GET /:device\_key/message](#get-device_keymessage)
-  - [DELETE /:device\_key/message](#delete-device_keymessage)
-  - [DELETE /:device\_key/message/:id](#delete-device_keymessageid)
-  - [GET /:device\_key/stream（WebSocket）](#get-device_keystreamwebsocket)
+  - [GET /register（兼容旧客户端）](#get-register-兼容旧客户端)
+  - [GET /register/:device\_key（校验存在）](#get-register-device-key-校验存在)
+- [Gotify 兼容监控（设备级）](#gotify-兼容监控-设备级)
+  - [GET /:device\_key/version](#get-device-key-version)
+  - [GET /:device\_key/message](#get-device-key-message)
+  - [DELETE /:device\_key/message](#delete-device-key-message)
+  - [DELETE /:device\_key/message/:id](#delete-device-key-message-id)
+  - [GET /:device\_key/stream（WebSocket）](#get-device-key-stream-websocket)
 - [MCP 接口](#mcp-接口)
   - [ALL /mcp](#all-mcp)
-  - [ALL /mcp/:device\_key](#all-mcpdevice_key)
+  - [ALL /mcp/:device\_key](#all-mcp-device-key)
 - [杂项](#杂项)
-  - [GET /](#get-)
+  - [GET /](#get)
   - [GET /ping](#get-ping)
   - [GET /healthz](#get-healthz)
   - [GET /version](#get-version)
@@ -259,7 +259,7 @@ curl "http://127.0.0.1:18080/ynJ5Ft4atkMkWeo2PAvFhF/%E6%A0%87%E9%A2%98/%E6%AD%A3
 curl -X POST "http://127.0.0.1:18080/ynJ5Ft4atkMkWeo2PAvFhF/hello?sound=minuet&group=test"
 ```
 
-**响应**：同 [V2 单设备推送](#post-pushv2-单设备推送)。
+**响应**：同 [V2 单设备推送](#post-push-v2-单设备推送)。
 
 ### Push 字段参考
 

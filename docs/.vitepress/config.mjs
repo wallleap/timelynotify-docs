@@ -1,4 +1,5 @@
 import { defineConfig } from "vitepress";
+import { buildSidebar } from "./sidebar.mjs";
 
 export default defineConfig({
   title: "TimelyNotify",
@@ -17,17 +18,7 @@ export default defineConfig({
     ["link", { rel: "apple-touch-icon", href: "/apple-touch-icon.png" }],
   ],
   themeConfig: {
-    sidebar: [
-      {
-        text: "导航",
-        items: [
-          { text: "使用文档", link: "/" },
-          { text: "API 文档", link: "/api/" },
-          { text: "服务端自部署", link: "/deploy/" },
-          { text: "常见问答", link: "/faq/" },
-        ],
-      },
-    ],
+    sidebar: buildSidebar(),
     outline: false,
     lastUpdated: { text: "最后更新" },
     search: false,
