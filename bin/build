@@ -36,6 +36,8 @@ fi
 
 echo "==> 上传到 ${SERVER}:${SERVER_PATH}（端口 ${SERVER_PORT}）..."
 # 单次 SSH 连接完成目录创建 + 传输（密码认证时只需输入一次密码）
-tar -C "$DIST" -cf - . | ssh -p "$SERVER_PORT" "$SERVER" "mkdir -p '${SERVER_PATH}' && tar -C '${SERVER_PATH}' -xf -"
+# --no-xattrs: 不打包 macOS 扩展属性（com.apple.provenance 等），
+# 避免服务器端 GNU tar 打印 "Ignoring unknown extended header keyword" 刷屏
+tar --no-xattrs -C "$DIST" -cf - . | ssh -p "$SERVER_PORT" "$SERVER" "mkdir -p '${SERVER_PATH}' && tar -C '${SERVER_PATH}' -xf -"
 
 echo "==> 完成：https 站点文件已部署到 ${SERVER}:${SERVER_PATH}"
