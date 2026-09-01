@@ -4,7 +4,7 @@
 
 ## 部署文件
 
-本项目的部署产物位于 `deploy/` 目录
+本项目的部署产物位于仓库 `deploy/` 目录
 
 | 文件 | 说明 |
 | --- | --- |
@@ -19,7 +19,7 @@
 
 ### Docker
 
-国内直接拉取 Docker Hub 镜像较慢，建议先配置镜像加速。在 Docker 的 `daemon.json` 中加入以下内容：
+国内直接拉取 Docker Hub 镜像较慢或拉取不到，建议先配置镜像加速。在 Docker 的 `daemon.json` 中加入以下内容：
 
 ```json
 {
@@ -66,13 +66,13 @@ docker info | grep -A 3 "Registry Mirrors"
 
 ---
 
-Docker 部署**方式一**：修改 `your-gotify-client-token` 为你想设置的客户端 token 后运行命令
+Docker 部署**方式一**：修改 `02ob86vvt71lb8sdr14608emfnbfurh6` 为你想设置的客户端 token 后运行命令
 
 ```sh
 docker run -dt --name timelynotify-server --restart unless-stopped \
   -p 18080:8080 \
   -v timelynotify-data:/data \
-  -e BARK_SERVER_GOTIFY_CLIENT_TOKEN="your-gotify-client-token" \
+  -e BARK_SERVER_GOTIFY_CLIENT_TOKEN="02ob86vvt71lb8sdr14608emfnbfurh6" \
   wallleap/timelynotify-server
 ```
 
@@ -83,11 +83,8 @@ Docker 部署**方式二**：使用 docker-compose 部署
 运行命令
 
 ```sh
-# 复制本项目 deploy/docker-compose.yaml 到任意目录
-mkdir timelynotify-server && cd timelynotify-server
-curl -sL https://gh-proxy.com/https://raw.githubusercontent.com/wallleap/timelynotify-server/master/deploy/docker-compose.yaml -o docker-compose.yaml
-# 提前赋权避免容器权限报错
-sudo chown -R 1000:1000 ./data
+# 复制本项目 deploy/docker-compose.yaml 到任意目录，修改 BARK_SERVER_GOTIFY_CLIENT_TOKEN
+mkdir timelynotify-server && cd timelynotify-server && curl -sL https://gh-proxy.com/https://raw.githubusercontent.com/wallleap/timelynotify-server/master/deploy/docker-compose.yaml -o docker-compose.yaml
 # 后台启动
 docker compose up -d
 ```
@@ -109,7 +106,17 @@ docker compose up -d
 docker rm -f timelynotify-server && docker volume rm timelynotify-data
 ```
 
-Docker 部署**方式三**：可以 clone 项目到本地，然后运行：`bin/up` / `bin/down` 默认使用 `deploy/docker-compose.local.yaml`（本地构建镜像，不拉远程），`bin/up` 会自动 `--build`。
+Docker 部署**方式三**：可以 clone 项目到本地，然后运行：
+
+```bash
+sudo chown -R 1000:1000 ./data
+```
+
+容器以非 root 用户 `app`（uid 1000）运行，首次挂载 host 数据目录时需把属主改为该 uid，否则报 `permission denied`
+
+接着运行 `bin/up`（启动） / `bin/down`（移除）
+
+默认使用 `deploy/docker-compose.local.yaml`（本地构建镜像，不拉远程），`bin/up` 会自动 `--build`。
 
 如需用远程镜像可运行 `COMPOSE_FILE=deploy/docker-compose.yaml bin/up`。
 
@@ -150,7 +157,7 @@ systemctl enable --now timelynotify-server
 
 4. 测试：`curl localhost:18080/ping`
 
-**注意：服务端默认使用 `/data` 目录存储数据，请确保有写权限，否则用 `--data` 指定目录。**
+**注意**：服务端默认使用 `/data` 目录存储数据，请确保有写权限，否则用 `--data` 指定目录。
 
 ## client_token
 
@@ -190,3 +197,69 @@ systemctl enable --now timelynotify-server
 2. 配置限流：`BARK_SERVER_RATE_LIMIT_IP=10`（每秒每 IP 最多 10 次）可缓解 CC / 刷注册。推送端点 `/push`、`/:device_key` 默认不限流（避免误伤正常推送），确需限制时再加 `BARK_SERVER_RATE_LIMIT_PUSH=true`。
 3. 建议前置 **HTTPS 反向代理**（如 Caddy / Nginx），并限制其仅转发到 `addr`。
 4. 数据目录 `data` 收紧为服务运行用户可读写。
+
+## 反向代理
+
+公网部署建议在前面加一层 HTTPS 反向代理（服务监听 `0.0.0.0:8080`，Docker 映射到 `18080`，下方示例按 `127.0.0.1:18080` 转发，按实际部署端口调整）。
+
+**注意**：`/:device_key/stream` 为 SSE 流式响应，必须禁用代理缓冲，否则消息会堆积不实时推送。
+
+### Caddy
+
+Caddy 会自动申请并续期证书，配置最简单。修改 Caddyfile（`sudo vim /etc/caddy/Caddyfile`），将 `notify.example.com` 换成你的域名：
+
+```caddy
+notify.example.com {
+    reverse_proxy 127.0.0.1:18080 {
+        # SSE 流必须禁用缓冲
+        flush_interval -1
+    }
+    tls your@email.com
+}
+```
+
+运行命令重启
+
+```bash
+sudo systemctl restart caddy
+```
+
+### Nginx
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name notify.example.com;
+
+    # 证书路径按实际填写
+    ssl_certificate     /etc/nginx/ssl/notify.example.com.pem;
+    ssl_certificate_key /etc/nginx/ssl/notify.example.com.key;
+
+    location / {
+        proxy_pass http://127.0.0.1:18080;
+
+        # 传递真实客户端信息
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto  $scheme;
+
+        # SSE 流式响应必须禁用缓冲
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+
+        # 长连接超时，避免推送过程中被断开
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+}
+
+# 可选：HTTP 跳转 HTTPS
+server {
+    listen 80;
+    server_name notify.example.com;
+    return 301 https://$host$request_uri;
+}
+```
