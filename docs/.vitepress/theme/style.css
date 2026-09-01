@@ -65,3 +65,32 @@
 .medium-zoom-image--opened {
   z-index: 101;
 }
+
+/* 移动端：代码块容器不超过屏幕宽度，内容保留横向滚动（不换行） */
+@media (max-width: 768px) {
+  .vp-doc div[class*='language-'] {
+    margin: 16px 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: auto !important;
+    border-radius: 8px !important;
+  }
+
+  .vp-doc [class*='language-'] pre,
+  .vp-doc [class*='language-'] code {
+    white-space: pre !important;
+    word-break: normal !important;
+  }
+
+  .vp-doc [class*='language-'] code {
+    padding: 0 16px !important;
+    font-size: 13px !important;
+  }
+
+  /* 把语言标签收进可视区域内 */
+  .vp-doc [class*='language-'] > span.lang {
+    right: 8px !important;
+    top: 4px !important;
+  }
+}
