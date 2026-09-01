@@ -2,7 +2,7 @@
 
 版本差异界面可能不一样，但是操作都是类似的。
 
-## 打开应用
+## 配置权限并测试
 
 > 应用主要作用就是接收通知的，因此必须打开通知权限
 
@@ -14,7 +14,9 @@
 
 ![](https://cdn.wallleap.cn/img/pic/illustration/20260830223446731.png?imageSlim)
 
-在弹出的通知管理中，① 把允许通知打开
+在弹出的通知管理中
+
+① 把允许通知打开
 
 ② 通知形式可以按照自己需要勾选（推荐全部勾选）
 
@@ -81,14 +83,75 @@ POST 请求可以同时推送多个设备（把 `device_key` 改成 `device_keys
 
 > 需要了解更多参数可以查看 [API 文档](/api/)
 
-### 示例-短信转发器
+### 示例-短信转发器添加 Bark 通道
 
 在发送通道中添加一个 Bark 类型，Bark-Server 填复制出来的链接，后面补个斜杠 `/`
 
 ![](https://cdn.wallleap.cn/img/pic/illustration/20260831001302910.png?imageSlim)
 
+### 示例-HarkForward 转发/备份鸿蒙端的通知
+
+HarkForward 会修改服务器配置方式，等修改后再补全这部分
+
+## 应用其它操作
+
+### 导出通知
+
+我的界面，点击导出消息可导出所有通知
+
+通知界面，多选后导出选中的通知
+
+### 深色模式
+
+我的界面右上角，从右到左为 跟随系统、浅色模式、深色模式
+
+### 删除通知
+
+通知界面
+
+1、左滑删除单条通知
+
+2、多选删除选中通知
+
+3、右上角垃圾桶删除所有通知
+
 ## 进阶操作
 
-- [服务端自部署](/deploy/) —— 在自己的服务器上部署 TimelyNotify
-- [常见问答](/faq/) —— 使用过程中的高频问题与解答
+### 自己部署服务
 
+在自己的服务器上部署 TimelyNotify 服务请查看 [服务端自部署](/deploy/) 文档
+
+部署完成后，复制服务链接，例如 `http://43.93.112.68:18080`（IP 地址和端口号）、`https://bark.wallleap.cn`（反向代理之后部署了 SSL 的链接）
+
+打开及时通知应用
+
+1. 进入服务器设置（两条操作路径选一条设置即可）
+   - 通知界面顶部标题
+   - 我的界面-服务器
+2. 填写服务器地址和服务器名称（名称可选），添加完成后会自动切换
+3. 点击**操作**，点击设置**客户端 Token**，填写部署服务时设置的客户端 Token
+
+![](https://cdn.wallleap.cn/img/pic/illustration/20260901101150089.png?imageSlim)
+
+![](https://cdn.wallleap.cn/img/pic/illustration/20260901101149848.png?imageSlim)
+
+### Bark 和 及时通知 使用同一条链接
+
+及时通知和 Bark 设置使用同一个 Key（在服务器设置-重置或还原 Key 中）
+
+![及时通知设置](https://cdn.wallleap.cn/img/pic/illustration/20260901102909361.png?imageSlim)
+
+![Bark 设置](https://cdn.wallleap.cn/img/pic/illustration/20260901103536668.png?imageSlim)
+
+推送时两个平台都能收到
+
+![](https://cdn.wallleap.cn/img/pic/illustration/20260901104351934.png?imageSlim)
+
+注意：
+
+- 同一个 Key 在两个平台都能使用
+- 同一个**平台**，重置/还原相同的 Key 将导致只有最后重置/还原的设备能收到通知（但是消息列表能同步）
+
+## 常见问答
+
+使用过程中的高频问题与解答，可以查看 [常见问答](/faq/)
