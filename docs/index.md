@@ -91,7 +91,7 @@ POST 请求可以同时推送多个设备（把 `device_key` 改成 `device_keys
 
 ### 示例-HarkForward 转发/备份鸿蒙端的通知
 
-HarkForward 会修改服务器配置方式，等修改后再补全这部分
+[点击这里](./harkforward.md) 查看 HarkForward 应用的使用说明
 
 ## 应用其它操作
 
