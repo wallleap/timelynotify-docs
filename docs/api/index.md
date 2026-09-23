@@ -276,8 +276,8 @@ V2 请求体 / V1 query+form 共用的推送字段（小写键名）：
 | volume         | string     | critical 通知铃声音量                                        | -                                                            |
 | badge          | integer    | App 图标角标数，值为 `0` 时清除角标                          | 同 iOS                                                       |
 | call           | string     | `1` 时铃声持续播放 30 秒                                     | -                                                            |
-| autoCopy       | string     | `1` 时自动复制                                               | -                                                            |
-| copy           | string     | 待复制的文本                                                 | -                                                            |
+| autoCopy       | string     | `1` 时自动复制                                               | `1` 时客户端同步到新通知后自动复制最新一条到剪贴板并 Toast 提示：仅非首次历史同步才触发、通知产生 5 分钟内有效、同一轮多条只取时间最新的一条（时间相同取 id 最大），避免打开 App 时积压的旧验证码覆盖剪贴板；首轮其余消息可在通知详情手动复制。**后台不触发**：App 在后台被系统冻结/未启动时，无法拉取消息并执行复制，需用户切回前台（或点系统通知跳进 App）才会触发；要实现"推送到达即复制"需 Push Kit `push-type: 2` 扩展通知权益，普通应用暂申请不到 |
+| copy           | string     | 待复制的文本                                                 | 详情页 action 区在最左侧显示"复制"按钮（仅 copy 时独占整行，与 url 并存时三项等宽）；autoCopy 触发时优先复制此字段，为空则回退复制 body；可放入加密载荷 |
 | sound          | string     | 铃声名（自动补 `.caf` 后缀），见 [Bark Sounds](https://github.com/Finb/Bark/tree/master/Sounds) | 铃声名与 Bark 一致，自动补 `.mp3` 后缀（已带 `.mp3`/`.wav`/`.mpeg` 后缀则保持不变，`.caf` 自动转 `.mp3`）；铃声文件需放在应用 `/resources/rawfile` 目录，且需在 AGC 申请「自定义铃声权益」，`category=MARKETING` 时自定义铃声无效 |
 | soundDuration  | integer    | -                                                            | 通知铃声时长（单位秒），仅同时传了 `sound` 才生效，取值范围 `[1, 60]`（超出自动截断为 60），铃声不足该时长会循环播放；不传时铃声超过 30 秒截断 |
 | icon           | string     | 图标 URL（iOS 15+）                                          | 优先映射到华为 `notification.image`；客户端列表和详情标题区作为左侧图标显示 |
@@ -308,9 +308,11 @@ V2 请求体 / V1 query+form 共用的推送字段（小写键名）：
 - `ciphertext` 与 `iv` 暂存在消息历史中，用户打开客户端后拉取并在本地解密；
 - 服务端不持有 Key、不解析密文、不解密消息。
 
+> 后台到达即解密/复制的能力限制：Push Kit `push-type: 2` 扩展通知（类似 iOS Bark Notification Service Extension）能让系统在通知展示前唤醒独立扩展进程做解密、`autoCopy` 等处理，**不依赖主 App 是否启动**。但该权益目前普通应用申请不到，因此 App 在后台被冻结/未启动时无法触发解密或自动复制，必须等用户切回前台（或点系统通知跳进 App）后由客户端主动拉取并处理。
+
 Harmony 客户端的 Padding 由模式固定：CBC/ECB 使用 `PKCS7`，GCM 使用 `NoPadding`，不可单独选择。
 
-发送端应先把完整通知内容编码为 UTF-8 JSON，可包含 `title`、`body`、`subtitle`、`icon`、`image`、`group`、`url`、`inboxContent`、`isArchive` 和 `ttl`，再按接收端为该服务器配置的参数加密：
+发送端应先把完整通知内容编码为 UTF-8 JSON，可包含 `title`、`body`、`subtitle`、`icon`、`image`、`group`、`url`、`copy`、`autoCopy`、`inboxContent`、`isArchive` 和 `ttl`，再按接收端为该服务器配置的参数加密：
 
 - 算法支持 `AES128`、`AES192`、`AES256`，Key 分别必须为 16、24、32 个 UTF-8 字节；
 - 模式支持 `CBC`、`ECB`、`GCM`；
