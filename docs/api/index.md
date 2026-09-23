@@ -286,8 +286,8 @@ V2 请求体 / V1 query+form 共用的推送字段（小写键名）：
 | ciphertext     | string     | 加密推送的 Base64 密文                                       | 使用普通 `push-type: 0` 发送安全占位通知；标题固定为 `[订阅] 加密通知`，服务端不解密 |
 | iv             | string     | 发送端逐条生成的 IV；ECB 可省略                              | 保存在消息历史中，供 Harmony 客户端打开后本地解密             |
 | markdown       | string     | Markdown 正文，覆盖 `body`                                   |                                                              |
-| isArchive      | string     | `1` 时由 App 归档                                            | -                                                            |
-| ttl            | integer    | 归档消息存活秒数，过期自动删除                               | -                                                            |
+| isArchive      | string     | `1` 或省略时由 App 归档；显式传其它值时不归档                | 同 iOS；未归档普通通知不写历史，加密通知暂存到客户端下载解密后删除且不在本地保留 |
+| ttl            | integer    | 归档消息存活秒数，过期自动删除                               | 同 iOS；客户端按消息时间计算绝对过期时间并清理本地历史         |
 | url            | string     | 点击通知跳转的 URL                                           | 写入 `notification.clickAction.data.url`；若同时传 `data`，会保留其中其它键，且此字段覆盖 `data.url` |
 | action         | string     | 传 "alert" 时，点击推送跳转到APP时会弹出操作弹窗             | 目前固定点击跳转应用首页                                     |
 | delete         | string     | `1` 时静默推送（不展示，ContentAvailable）                   | -                                                            |
@@ -309,7 +309,7 @@ V2 请求体 / V1 query+form 共用的推送字段（小写键名）：
 
 Harmony 客户端的 Padding 由模式固定：CBC/ECB 使用 `PKCS7`，GCM 使用 `NoPadding`，不可单独选择。
 
-发送端应先把完整通知内容编码为 UTF-8 JSON，可包含 `title`、`body`、`subtitle`、`icon`、`group`、`url` 和 `inboxContent`，再按接收端为该服务器配置的参数加密：
+发送端应先把完整通知内容编码为 UTF-8 JSON，可包含 `title`、`body`、`subtitle`、`icon`、`group`、`url`、`inboxContent`、`isArchive` 和 `ttl`，再按接收端为该服务器配置的参数加密：
 
 - 算法支持 `AES128`、`AES192`、`AES256`，Key 分别必须为 16、24、32 个 UTF-8 字节；
 - 模式支持 `CBC`、`ECB`、`GCM`；
@@ -323,7 +323,7 @@ Harmony 客户端的 Padding 由模式固定：CBC/ECB 使用 `PKCS7`，GCM 使�
 
 `ciphertext` 为空时保持现有普通通知行为。没有扩展通知权益时，系统通知栏无法在展示前显示解密后的内容。
 
-Harmony 客户端将远程消息历史作为待迁移队列：首次进入及之后每次轮询都从 `after=0` 检查远程记录。每页通知先完成解密，再将明文、原始 `ciphertext`/`iv` 与加密标记写入本地数据库；只有确认本地落库成功后，才逐条删除对应的远程记录。远程删除失败的记录保留在服务器，下次同步会幂等重试。同步完成后，客户端中的单条、多选、分组和全部删除都只操作本地副本，删除后无法从服务器恢复；分组删除覆盖该分组尚未加载到界面的全部本地通知。
+Harmony 客户端将远程消息历史作为待迁移队列：首次进入及之后每次轮询都从 `after=0` 检查远程记录。每页通知先完成解密，再应用 `isArchive`/`ttl`：缺省或 `isArchive=1` 且尚未过期的通知会将明文、原始 `ciphertext`/`iv`、加密标记与绝对过期时间写入本地数据库；显式关闭归档或同步时已经过期的通知不落本地。处理成功后才逐条删除对应远程记录，删除失败则保留在服务器供下次同步幂等重试。同步完成后，客户端中的单条、多选、分组和全部删除都只操作本地副本，删除后无法从服务器恢复；分组删除覆盖该分组尚未加载到界面的全部本地通知。
 
 ### 多平台扇出
 
@@ -745,8 +745,8 @@ curl -X POST "http://127.0.0.1:18080/mcp/my-device" \
 | icon        | string | 否                               | 图标 URL                                        |
 | image       | string | 否                               | 图片 URL                                        |
 | group       | string | 否                               | 通知分组                                          |
-| isArchive   | string | 否                               | `1` 时归档                                       |
-| ttl         | number | 否                               | 归档消息存活秒数                                      |
+| isArchive   | string | 否                               | `1` 或省略时归档；其它值不归档（加密鸿蒙通知仅暂存到同步完成） |
+| ttl         | number | 否                               | 归档消息存活秒数；服务端与 Harmony 本地历史均会过期清理 |
 | url         | string | 否                               | 点击跳转 URL                                      |
 | copy        | string | 否                               | 待复制文本                                         |
 
