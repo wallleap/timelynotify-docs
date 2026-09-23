@@ -208,7 +208,7 @@ systemctl enable --now timelynotify-server
 
 Caddy 会自动申请并续期证书，配置最简单。修改 Caddyfile（`sudo vim /etc/caddy/Caddyfile`），将 `notify.example.com` 换成你的域名：
 
-```caddy
+```nginx
 notify.example.com {
     reverse_proxy 127.0.0.1:18080 {
         # SSE 流必须禁用缓冲
