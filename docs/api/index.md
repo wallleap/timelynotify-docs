@@ -280,8 +280,8 @@ V2 请求体 / V1 query+form 共用的推送字段（小写键名）：
 | copy           | string     | 待复制的文本                                                 | -                                                            |
 | sound          | string     | 铃声名（自动补 `.caf` 后缀），见 [Bark Sounds](https://github.com/Finb/Bark/tree/master/Sounds) | 铃声名与 Bark 一致，自动补 `.mp3` 后缀（已带 `.mp3`/`.wav`/`.mpeg` 后缀则保持不变，`.caf` 自动转 `.mp3`）；铃声文件需放在应用 `/resources/rawfile` 目录，且需在 AGC 申请「自定义铃声权益」，`category=MARKETING` 时自定义铃声无效 |
 | soundDuration  | integer    | -                                                            | 通知铃声时长（单位秒），仅同时传了 `sound` 才生效，取值范围 `[1, 60]`（超出自动截断为 60），铃声不足该时长会循环播放；不传时铃声超过 30 秒截断 |
-| icon           | string     | 图标 URL（iOS 15+）                                          | 华为会自动校验图片是否合规，必须是 HTTPS URL，支持图片格式为PNG、JPG、JPEG、BMP、WEBP，图片像素的总字节数不超过192KB，若超过则图片不展示 |
-| image          | string     | 图片 URL（iOS 15+）                                          | -                                                            |
+| icon           | string     | 图标 URL（iOS 15+）                                          | 优先映射到华为 `notification.image`；客户端列表和详情标题区作为左侧图标显示 |
+| image          | string     | 图片 URL（iOS 15+）                                          | `icon` 为空时回退映射到华为 `notification.image`；客户端列表作为右侧缩略图、详情作为正文下方大图显示。华为要求 HTTPS，支持 PNG/JPG/JPEG/BMP/WEBP，总字节数不超过 192KB |
 | group          | string     | 通知分组                                                     |                                                              |
 | ciphertext     | string     | 加密推送的 Base64 密文                                       | 使用普通 `push-type: 0` 发送安全占位通知；归档与非归档使用不同提示文案，服务端不解密 |
 | iv             | string     | 发送端逐条生成的 IV；ECB 可省略                              | 保存在消息历史中，供 Harmony 客户端打开后本地解密             |
@@ -310,7 +310,7 @@ V2 请求体 / V1 query+form 共用的推送字段（小写键名）：
 
 Harmony 客户端的 Padding 由模式固定：CBC/ECB 使用 `PKCS7`，GCM 使用 `NoPadding`，不可单独选择。
 
-发送端应先把完整通知内容编码为 UTF-8 JSON，可包含 `title`、`body`、`subtitle`、`icon`、`group`、`url`、`inboxContent`、`isArchive` 和 `ttl`，再按接收端为该服务器配置的参数加密：
+发送端应先把完整通知内容编码为 UTF-8 JSON，可包含 `title`、`body`、`subtitle`、`icon`、`image`、`group`、`url`、`inboxContent`、`isArchive` 和 `ttl`，再按接收端为该服务器配置的参数加密：
 
 - 算法支持 `AES128`、`AES192`、`AES256`，Key 分别必须为 16、24、32 个 UTF-8 字节；
 - 模式支持 `CBC`、`ECB`、`GCM`；
@@ -743,8 +743,8 @@ curl -X POST "http://127.0.0.1:18080/mcp/my-device" \
 | call        | string | 否                               | `1` 时铃声持续 30 秒                                |
 | sound       | string | 否                               | 铃声名（iOS 自动补 `.caf`，鸿蒙自动补 `.mp3`）               |
 | soundDuration | number | 否                             | 鸿蒙通知铃声时长（秒），1-60，需配合 `sound` 使用               |
-| icon        | string | 否                               | 图标 URL                                        |
-| image       | string | 否                               | 图片 URL                                        |
+| icon        | string | 否                               | 图标 URL；鸿蒙通知图优先使用此字段                      |
+| image       | string | 否                               | 图片 URL；`icon` 为空时作为鸿蒙通知图回退             |
 | group       | string | 否                               | 通知分组                                          |
 | isArchive   | string | 否                               | `1` 或省略时归档；其它值不归档（加密鸿蒙通知仅暂存到同步完成） |
 | ttl         | number | 否                               | 归档消息存活秒数；服务端与 Harmony 本地历史均会过期清理 |
