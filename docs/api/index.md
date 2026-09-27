@@ -275,6 +275,8 @@ curl -X POST "http://127.0.0.1:18080/ynJ5Ft4atkMkWeo2PAvFhF/hello?sound=minuet&g
 - 失效 token 按平台定向清理（`ClearDeviceTokenByKeyAndPlatform`），不会跨平台误清；
 - 推送历史只记录一次（gotify 监控流），与平台数无关。
 
+例外：Harmony `level=passive` 以历史写入作为该平台的投递结果，不调用华为接口；写入失败时该平台失败，只有 Harmony 目标时返回 500。同一 Key 若还有 iOS 目标，iOS 仍照常走 APNs，任一平台成功即可返回 200。
+
 **收窄到指定平台**：在推送体里带 `"platform": "ios"` 或 `"platform": "harmony"`，仅推该平台记录。`platform` 是**收窄**而非覆盖——只选择投递哪些已绑定记录，不会改写存储的平台字段。
 
 ### 通知删除（delete，Bark 兼容）
@@ -315,7 +317,7 @@ curl "http://127.0.0.1:18080/<your key>?delete=1&id=12345"
 
 推送鸿蒙设备与 iOS 使用完全相同的 API。
 
-> **`level` 字段是 APNs 概念，华为 V3 无直接对应**：V3 的 `clickAction` 是对象 `{actionType: 0|1}`（0=点击进应用首页、1=进内页），不再是 V1 的 `launch`/`banner`/`page` 字符串。服务端统一用 `actionType=0`（点击进应用首页），V3 通知展示样式由系统按 `category` 与前台状态决定，不再有 launch/banner/page 之分。
+> **Harmony `level` 映射**：`active` 或省略时发送普通华为 V3 通知；`passive` 仅保存到服务端历史，不调用华为 V3，客户端下次同步后才能看到（不会即时提醒）；`timeSensitive` 和 `critical` 暂按 `active` 发送，不具备时效性/重要警告特权。V3 的 `clickAction` 是对象 `{actionType: 0|1}`（0=点击进应用首页、1=进内页），不再是 V1 的 `launch`/`banner`/`page` 字符串；普通通知统一用 `actionType=0`。后续获得相应权益时可再调整特殊级别的实现。
 >
 > 华为 V3 场景化消息：`category` 默认 `SUBSCRIPTION`（需在 AGC 申请「通知消息自分类权益」并通过审核，否则降级 `MARKETING` 受每设备每日 2/5 条频控且自定义铃声失效）；`foregroundShow` 默认 `true`；`pushOptions.ttl` 默认 86400。
 
