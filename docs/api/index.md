@@ -317,7 +317,7 @@ curl "http://127.0.0.1:18080/<your key>?delete=1&id=12345"
 
 推送鸿蒙设备与 iOS 使用完全相同的 API。
 
-> **Harmony `level` 映射**：`active` 或省略时发送普通华为 V3 通知；`passive` 仅保存到服务端历史，不调用华为 V3，客户端下次同步后才能看到（不会即时提醒）；`timeSensitive` 和 `critical` 暂按 `active` 发送，不具备时效性/重要警告特权。V3 的 `clickAction` 是对象 `{actionType: 0|1}`（0=点击进应用首页、1=进内页），不再是 V1 的 `launch`/`banner`/`page` 字符串；普通通知统一用 `actionType=0`。后续获得相应权益时可再调整特殊级别的实现。
+> **Harmony `level` 映射**：`active` 或省略时发送普通华为 V3 通知；`passive` 仅保存到服务端历史，不调用华为 V3，客户端下次同步后才能看到（不会即时提醒）；`timeSensitive` 和 `critical` 暂按 `active` 发送，不具备时效性/重要警告特权。V3 的 `clickAction` 统一使用 `actionType=0` 打开应用，并在 `data` 中传 `tn_action`、历史数据库实例 ID 和消息 ID；App 根据 `action` 决定是否打开详情。加密通知只额外明传定位信息及用户显式提供的 `url`，不明传正文、密文或 Key。
 >
 > 华为 V3 场景化消息：`category` 默认 `SUBSCRIPTION`（需在 AGC 申请「通知消息自分类权益」并通过审核，否则降级 `MARKETING` 受每设备每日 2/5 条频控且自定义铃声失效）；`foregroundShow` 默认 `true`；`pushOptions.ttl` 默认 86400。
 
