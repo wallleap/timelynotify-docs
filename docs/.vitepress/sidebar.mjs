@@ -7,6 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pages = [
   { text: "使用文档", file: "../index.md", link: "/" },
   { text: "API 文档", file: "../api/index.md", link: "/api/" },
+  { text: "Push 字段参考", file: "../fields/index.md", link: "/fields/" },
   { text: "服务端自部署", file: "../deploy/index.md", link: "/deploy/" },
   { text: "常见问答", file: "../faq/index.md", link: "/faq/" },
 ];
