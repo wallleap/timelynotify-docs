@@ -446,8 +446,10 @@ curl "http://127.0.0.1:18080/my-device/version"
 **响应**（非 CommonResp 格式）：
 
 ```json
-{"version":"v0.4.0"}
+{"version":"v0.4.0","instanceId":"550e8400-e29b-41d4-a716-446655440000","instancePersistent":true}
 ```
+
+`instanceId` 是保存在 `gotify.db` 中的数据库实例 UUID，首次打开旧数据库时自动补建；重启或清空消息不变，重建数据库后变化。内存降级时 `instancePersistent=false`，实例 ID 仅在本次进程有效。客户端应组合实例 ID、`device_key` 和数字消息 ID 标识历史；复制数据库文件也会复制实例 ID。
 
 > 服务未初始化时返回 `503 {"code":503,"message":"gotify compat not initialized",...}`。
 
@@ -483,6 +485,8 @@ curl "http://127.0.0.1:18080/my-device/message?limit=-1&token=<clientToken>"
 
 ```json
 {
+  "instanceId": "550e8400-e29b-41d4-a716-446655440000",
+  "instancePersistent": true,
   "paging": {"size": 2, "limit": 100, "since": 0, "hasMore": false},
   "messages": [
     {"id": 1, "device_key": "my-device", "title": "...", "body": "...", "...": "..."},
@@ -490,6 +494,8 @@ curl "http://127.0.0.1:18080/my-device/message?limit=-1&token=<clientToken>"
   ]
 }
 ```
+
+所有消息列表响应（包括 `limit=-1` 流式导出）都包含顶层 `instanceId` 和 `instancePersistent`。旧客户端可忽略新字段；新客户端访问旧服务端时仍按旧协议同步。
 
 `paging` 字段：
 
