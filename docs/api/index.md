@@ -686,7 +686,7 @@ curl -X POST "http://127.0.0.1:18080/mcp/my-device" \
 | title       | string | 否                               | 通知标题                                          |
 | subtitle    | string | 否                               | 通知副标题                                         |
 | body        | string | 否                               | 通知正文                                          |
-| markdown    | string | 否                               | Markdown 正文，覆盖 `body`                         |
+| markdown    | string | 否                               | 非空时优先于 `body`；iOS 由 Bark 客户端解析，鸿蒙系统通知与列表使用服务端生成的纯文本，详情使用原始 Markdown |
 | level       | enum   | 否                               | `critical`/`active`/`timeSensitive`/`passive` |
 | volume      | number | 否                               | critical 通知音量，0-10，默认 5                       |
 | badge       | number | 否                               | App 图标角标数                                     |
